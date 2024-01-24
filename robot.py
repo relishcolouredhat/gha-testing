@@ -6,53 +6,48 @@
 #
 
 import wpilib
-import wpilib.drive
 
 
 class MyRobot(wpilib.TimedRobot):
-    def robotInit(self):
-        """
-        This function is called upon program startup and
-        should be used for any initialization code.
-        """
-        self.leftDrive = wpilib.PWMSparkMax(0)
-        self.rightDrive = wpilib.PWMSparkMax(1)
-        self.robotDrive = wpilib.drive.DifferentialDrive(
-            self.leftDrive, self.rightDrive
-        )
-        self.controller = wpilib.XboxController(0)
-        self.timer = wpilib.Timer()
+    """Main robot class."""
 
-        # We need to invert one side of the drivetrain so that positive voltages
-        # result in both sides moving forward. Depending on how your robot's
-        # gearbox is constructed, you might have to invert the left side instead.
-        self.rightDrive.setInverted(True)
+    def robotInit(self):
+        """Robot-wide initialization code should go here."""
+        self.lstick = wpilib.Joystick(0)
+        self.motor = wpilib.Talon(3)
+
+        self.timer = wpilib.Timer()
+        self.loops = 0
 
     def autonomousInit(self):
-        """This function is run once each time the robot enters autonomous mode."""
-        self.timer.restart()
+        """Called only at the beginning of autonomous mode."""
+        pass
 
     def autonomousPeriodic(self):
-        """This function is called periodically during autonomous."""
+        """Called every 20ms in autonomous mode."""
+        pass
 
-        # Drive for two seconds
-        if self.timer.get() < 2.0:
-            # Drive forwards half speed, make sure to turn input squaring off
-            self.robotDrive.arcadeDrive(0.5, 0, squareInputs=False)
-        else:
-            self.robotDrive.stopMotor()  # Stop robot
+    def disabledInit(self):
+        """Called only at the beginning of disabled mode."""
+        self.logger.info("%d loops / %f seconds", self.loops, self.timer.get())
+
+    def disabledPeriodic(self):
+        """Called every 20ms in disabled mode."""
+        pass
 
     def teleopInit(self):
-        """This function is called once each time the robot enters teleoperated mode."""
+        """Called only at the beginning of teleoperated mode."""
+        self.loops = 0
+        self.timer.reset()
+        self.timer.start()
 
     def teleopPeriodic(self):
-        """This function is called periodically during teleoperated mode."""
-        self.robotDrive.arcadeDrive(
-            -self.controller.getLeftY(), -self.controller.getRightX()
-        )
+        """Called every 20ms in teleoperated mode"""
+        # Move a motor with a Joystick
+        self.motor.set(self.lstick.getY())
 
-    def testInit(self):
-        """This function is called once each time the robot enters test mode."""
-
-    def testPeriodic(self):
-        """This function is called periodically during test mode."""
+        # Print out the number of loop iterations passed every second
+        self.loops += 1
+        if self.timer.advanceIfElapsed(1):
+            self.logger.info("%d loops / second", self.loops)
+            self.loops = 0
